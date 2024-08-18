@@ -8,33 +8,40 @@ from red_black_tree import RedBlackTree
 
 def visualize_tree(tree):
     G = nx.DiGraph()
-    
-    # Example visualization logic, you may need to adjust it based on your tree structure
-    def add_edges(node, parent=None):
-        if parent is not None:
-            G.add_edge(parent.data, node.data)
-        if node.left != tree.TNULL:
-            add_edges(node.left, node)
-        if node.right != tree.TNULL:
-            add_edges(node.right, node)
-    
-    if isinstance(tree, RedBlackTree):
-        add_edges(tree.root)
-    elif isinstance(tree, Trie):
-        def add_trie_edges(node, prefix=""):
-            if node.is_end_of_word:
-                G.add_node(prefix)
-            for char, child in node.children.items():
-                G.add_edge(prefix, prefix + char)
-                add_trie_edges(child, prefix + char)
-        
+
+    # Helper function to add edges for the Trie
+    def add_trie_edges(node, prefix=""):
+        if node.is_end_of_word:
+            G.add_node(prefix, color='lightgreen')
+        for char, child in node.children.items():
+            child_prefix = prefix + char
+            G.add_node(child_prefix)
+            G.add_edge(prefix, child_prefix)
+            add_trie_edges(child, child_prefix)
+
+    # Helper function to add edges for Red-Black Tree
+    def add_rbt_edges(node):
+        if node != tree.TNULL:
+            if node.left != tree.TNULL:
+                G.add_edge(node.data, node.left.data)
+                add_rbt_edges(node.left)
+            if node.right != tree.TNULL:
+                G.add_edge(node.data, node.right.data)
+                add_rbt_edges(node.right)
+
+    # Visualization logic based on the type of tree
+    if isinstance(tree, Trie):
         add_trie_edges(tree.root)
+    elif isinstance(tree, RedBlackTree):
+        add_rbt_edges(tree.root)
     elif isinstance(tree, BPlusTree):
-        # Add logic specific to BPlusTree
+        # Implement visualization for BPlusTree based on its structure
         pass
-    
+
+    # Draw the graph
     pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_size=5000, node_color="skyblue", font_size=10, font_weight="bold")
+    colors = [G.nodes[node].get('color', 'skyblue') for node in G.nodes]
+    nx.draw(G, pos, with_labels=True, node_size=5000, node_color=colors, font_size=10, font_weight="bold")
     plt.show()
 
 st.title('Tree Visualization')
@@ -52,7 +59,6 @@ if tree_type == 'Prefix Tree':
 elif tree_type == 'Red-Black Tree':
     rbt = RedBlackTree()
     numbers = st.text_input('Insert numbers (comma separated)').split(',')
-    # Convert numbers to integers, while handling potential empty strings
     numbers = [int(number.strip()) for number in numbers if number.strip()]
     st.write(f"Numbers to insert: {numbers}")  # Debug statement
     for number in numbers:
@@ -62,7 +68,6 @@ elif tree_type == 'Red-Black Tree':
 elif tree_type == 'B+ Tree':
     bpt = BPlusTree(t=3)  # 3rd-order B+ Tree
     numbers = st.text_input('Insert numbers (comma separated)').split(',')
-    # Convert numbers to integers, while handling potential empty strings
     numbers = [int(number.strip()) for number in numbers if number.strip()]
     st.write(f"Numbers to insert: {numbers}")  # Debug statement
     for number in numbers:
